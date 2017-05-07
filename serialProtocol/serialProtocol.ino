@@ -15,6 +15,8 @@ boolean bCW;
 void setup()
 {
   // put your setup code here, to run once:
+  Serial.begin(115200);
+  Serial.println("Serial Configured for 115200");
 
   pinMode (pinCLK, INPUT);
   pinMode (pinDT, INPUT);
