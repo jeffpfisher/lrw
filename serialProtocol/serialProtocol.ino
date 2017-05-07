@@ -1,18 +1,28 @@
- int pinA = 2;  // Connected to CLK on KY-040
- int pinB = 3;  // Connected to DT on KY-040
- int encoderPosCount = 0; 
- int pinALast;  
- int aVal;
- boolean bCW;
+int rightTurn = 4;
+int leftTurn = 5;
+int command = 0;
 
-void setup() {
+int motor = 9;
+
+
+int pinCLK = 3;  // Connected to CLK on KY-040
+int pinDT = 2;  // Connected to DT on KY-040
+int encoderPosCount = 0;
+int pinCLKLast;
+int aVal;
+boolean bCW;
+
+void setup()
+{
   // put your setup code here, to run once:
-  Serial.begin(9600);
-  Serial.println("Serial Configured for 9600");
 
-  pinMode (pinA,INPUT);
-  pinMode (pinB,INPUT);
-  pinALast = digitalRead(pinA);
+  pinMode (pinCLK, INPUT);
+  pinMode (pinDT, INPUT);
+  pinCLKLast = digitalRead(pinCLK);
+
+  pinMode(rightTurn, OUTPUT);
+  pinMode(leftTurn, OUTPUT);
+  pinMode(motor, INPUT);
 }
 
 void loop() {
@@ -24,54 +34,62 @@ void loop() {
   //
   if (Serial.available()) {
     byte bytesRead = Serial.readBytesUntil(10, buffer, buffer_len);
-  
+
     if (bytesRead > 0) {
       buffer[bytesRead] = 0; // Null terminate string
       switch (buffer[0]) {
         case 'r': // Go right
           Serial.println("right");
+          digitalWrite(rightTurn, HIGH);
+          digitalWrite(leftTurn, LOW);
           break;
         case 'l': // Go left
           Serial.println("left");
+          digitalWrite(leftTurn, HIGH);
+          digitalWrite(rightTurn, LOW);
           break;
         case 's': // Stop turning
           Serial.println("stop");
+          digitalWrite(rightTurn, LOW);
+          digitalWrite(leftTurn, LOW);
           break;
         case 'g': // Set speed
           if (bytesRead > 1) {
             String speedString = String(&buffer[1]);
             int speed = speedString.toInt();
             Serial.println(speed, DEC);
+            analogWrite(motor, speed);
           }
           break;
         case 'a': // Abort/stop
           Serial.println("abort");
+          analogWrite(motor, 0);
           break;
       }
     }
   }
 
-  
-  aVal = digitalRead(pinA);
-   if (aVal != pinALast){ // Means the knob is rotating
-     // if the knob is rotating, we need to determine direction
-     // We do that by reading pin B.
-     if (digitalRead(pinB) != aVal) {  // Means pin A Changed first - We're Rotating Clockwise
-       encoderPosCount ++;
-       bCW = true;
-     } else {// Otherwise B changed first and we're moving CCW
-       bCW = false;
-       encoderPosCount--;
-     }
-     Serial.print ("Rotated: ");
-     if (bCW){
-       Serial.println ("clockwise");
-     }else{
-       Serial.println("counterclockwise");
-     }
-     Serial.print("Encoder Position: ");
-     Serial.println(encoderPosCount);
-     
-   } 
-   pinALast = aVal;
+
+  aVal = digitalRead(pinCLK);
+  if (aVal != pinCLKLast) { // Means the knob is rotating
+    // if the knob is rotating, we need to determine direction
+    // We do that by reading pin B.
+    if (digitalRead(pinDT) != aVal) {  // Means pin A Changed first - We're Rotating Clockwise
+      encoderPosCount ++;
+      bCW = true;
+    } else {// Otherwise B changed first and we're moving CCW
+      bCW = false;
+      encoderPosCount--;
+    }
+    Serial.print ("Rotated: ");
+    if (bCW) {
+      Serial.println ("clockwise");
+    } else {
+      Serial.println("counterclockwise");
+    }
+    Serial.print("Encoder Position: ");
+    Serial.println(encoderPosCount);
+
+  }
+  pinCLKLast = aVal;
 }
